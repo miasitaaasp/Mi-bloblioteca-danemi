@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Biblioteca</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-pink-100 min-h-screen font-sans">
+  <!-- Banner principal -->
+  <header class="relative h-48 bg-pink-300 flex items-center justify-center">
+    <h1 class="text-4xl font-bold text-white z-10">Mi Biblioteca</h1>
+    <img id="profile-pic" class="absolute top-2 left-2 w-20 h-20 rounded-full object-cover border-4 border-white" src="https://via.placeholder.com/150" alt="Foto de perfil">
+  </header>  <!-- Navegación -->  <nav class="flex justify-center gap-4 my-6">
+    <button onclick="navigate('mangas')" class="bg-pink-200 px-4 py-2 rounded-xl shadow">Mangas</button>
+    <button onclick="navigate('manhwas')" class="bg-pink-200 px-4 py-2 rounded-xl shadow">Manhwas</button>
+    <button onclick="navigate('series')" class="bg-pink-200 px-4 py-2 rounded-xl shadow">Series</button>
+    <button onclick="navigate('peliculas')" class="bg-pink-200 px-4 py-2 rounded-xl shadow">Películas</button>
+  </nav>  <!-- Contenido dinámico -->  <main id="content" class="px-4">
+    <p class="text-center text-gray-500">Selecciona una sección para empezar ❤️</p>
+  </main>  <!-- Scripts -->  <script>
+    function navigate(section) {
+      const content = document.getElementById('content');
+      content.innerHTML = `
+        <div class="mb-4">
+          <h2 class="text-2xl font-bold mb-2">${section.charAt(0).toUpperCase() + section.slice(1)}</h2>
+
+          <div class="mb-6">
+            <label class="block mb-1 text-sm">Registra cuánto leíste/visto:</label>
+            <input type="number" id="input-${section}" placeholder="Por ejemplo: 3" class="px-2 py-1 rounded border w-1/2">
+            <button onclick="guardar('${section}')" class="bg-pink-300 text-white px-2 py-1 rounded ml-2">Guardar</button>
+          </div>
+
+          <canvas id="chart-${section}" height="100"></canvas>
+
+          <div class="mt-6">
+            <h3 class="font-semibold mb-2">Agregar nuevo título</h3>
+            <input id="titulo-${section}" placeholder="Título" class="px-2 py-1 rounded border">
+            <textarea id="sinopsis-${section}" placeholder="Sinopsis" class="block w-full mt-1 rounded border p-2"></textarea><button onclick="agregarObra('${section}')" class="bg-pink-400 text-white px-3 py-1 mt-2 rounded">Agregar</button>
+      </div>
+
+      <div id="lista-${section}" class="mt-6 grid gap-4"></div>
+    </div>
+  `;
+  mostrarGrafico(section);
+  cargarLista(section);
+}
+
+function guardar(section) {
+  const input = document.getElementById(`input-${section}`);
+  const valor = parseInt(input.value);
+  if (!isNaN(valor)) {
+    const key = `progreso-${section}`;
+    const data = JSON.parse(localStorage.getItem(key)) || [];
+    data.push({ fecha: new Date().toISOString(), valor });
+    localStorage.setItem(key, JSON.stringify(data));
+    mostrarGrafico(section);
+  }
+}
+
+function mostrarGrafico(section) {
+  const ctx = document.getElementById(`chart-${section}`).getContext('2d');
+  const data = JSON.parse(localStorage.getItem(`progreso-${section}`)) || [];
+  const labels = data.map(d => new Date(d.fecha).toLocaleDateString());
+  const valores = data.map(d => d.valor);
+
+  if (window[`grafico_${section}`]) window[`grafico_${section}`].destroy();
+  window[`grafico_${section}`] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Progreso',
+        data: valores,
+        backgroundColor: '#f9a8d4'
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+function agregarObra(section) {
+  const titulo = document.getElementById(`titulo-${section}`).value;
+  const sinopsis = document.getElementById(`sinopsis-${section}`).value;
+  const listaKey = `lista-${section}`;
+  const lista = JSON.parse(localStorage.getItem(listaKey)) || [];
+  lista.push({ titulo, sinopsis, estado: 'pendiente' });
+  localStorage.setItem(listaKey, JSON.stringify(lista));
+  cargarLista(section);
+}
+
+function cambiarEstado(section, index) {
+  const listaKey = `lista-${section}`;
+  const lista = JSON.parse(localStorage.getItem(listaKey)) || [];
+  lista[index].estado = lista[index].estado === 'pendiente' ? 'leido' : 'pendiente';
+  localStorage.setItem(listaKey, JSON.stringify(lista));
+  cargarLista(section);
+}
+
+function cargarLista(section) {
+  const lista = JSON.parse(localStorage.getItem(`lista-${section}`)) || [];
+  const contenedor = document.getElementById(`lista-${section}`);
+  contenedor.innerHTML = '';
+  lista.forEach((obra, index) => {
+    contenedor.innerHTML += `
+      <div class="bg-white rounded shadow p-4">
+        <h4 class="font-bold">${obra.titulo}</h4>
+        <p class="text-sm text-gray-600">${obra.sinopsis}</p>
+        <button onclick="cambiarEstado('${section}', ${index})" class="mt-2 text-sm bg-pink-300 text-white px-2 py-1 rounded">
+          ${obra.estado === 'pendiente' ? 'Marcar como leído' : 'Marcado como leído'}
+        </button>
+      </div>
+    `;
+  });
+}
+
+  </script>
+</body>
+      </html>
