@@ -1,20 +1,23 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mi Biblioteca</title>
   <style>
     body {
-      margin: 0;
+      background: #ffe6f0;
       font-family: Arial, sans-serif;
-      background-color: #ffe6f0;
+      text-align: center;
+      margin: 0;
+      padding: 40px 20px;
       color: #333;
     }
     header {
-      background-color: #ffb6c1;
-      padding: 20px;
-      text-align: center;
+      background: #ffb6c1;
+      padding: 30px 20px;
+      border-radius: 15px;
       position: relative;
+      margin-bottom: 40px;
     }
     header img {
       width: 100px;
@@ -22,150 +25,42 @@
       border-radius: 50%;
       object-fit: cover;
       position: absolute;
-      left: 20px;
-      top: 20px;
+      left: 30px;
+      top: 30px;
     }
     header h1 {
       margin: 0;
-      font-size: 2.5rem;
+      font-size: 3rem;
     }
     nav {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    nav button {
-      background-color: #ffb6c1;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
-      cursor: pointer;
-    }
-    .content {
-      padding: 20px;
-    }
-    .upload-container {
       margin-top: 20px;
     }
-    input[type="file"] {
-      margin: 10px 0;
+    nav button {
+      background: #ffb6c1;
+      border: none;
+      border-radius: 25px;
+      padding: 15px 30px;
+      margin: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
     }
-    .card {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .card img {
-      width: 100%;
-      border-radius: 10px;
-    }
-    .graph-container {
-      margin-top: 40px;
+    nav button:hover {
+      background: #ffa3b1;
     }
   </style>
 </head>
 <body>
   <header>
-    <input type="file" id="profileInput" accept="image/*">
-    <img id="profileImage" src="" alt="Foto de perfil">
+    <img src="perfil.jpg" alt="Foto de perfil" />
     <h1>Mi Biblioteca</h1>
-    <nav>
-      <button onclick="showSection('mangas')">Mangas</button>
-      <button onclick="showSection('manhuas')">Manhuas</button>
-      <button onclick="showSection('series')">Series</button>
-      <button onclick="showSection('peliculas')">Películas</button>
-    </nav>
   </header>
-  <div class="content">
-    <div class="upload-container">
-      <input type="file" id="coverInput" accept="image/*">
-      <button onclick="addCard()">Agregar a biblioteca</button>
-    </div>
-    <div id="library"></div><div class="graph-container">
-  <canvas id="readingChart" width="400" height="200"></canvas>
-</div>
 
-  </div>  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script>
-    const profileImage = document.getElementById('profileImage');
-    const profileInput = document.getElementById('profileInput');
-    const coverInput = document.getElementById('coverInput');
-    const library = document.getElementById('library');
-
-    let covers = JSON.parse(localStorage.getItem('covers') || '[]');
-
-    profileInput.addEventListener('change', function () {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        profileImage.src = e.target.result;
-        localStorage.setItem('profileImage', e.target.result);
-      };
-      reader.readAsDataURL(this.files[0]);
-    });
-
-    if (localStorage.getItem('profileImage')) {
-      profileImage.src = localStorage.getItem('profileImage');
-    }
-
-    function addCard() {
-      const file = coverInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        covers.push(e.target.result);
-        localStorage.setItem('covers', JSON.stringify(covers));
-        renderCovers();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function renderCovers() {
-      library.innerHTML = '';
-      covers.forEach((src, index) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <img src="${src}" />
-          <button onclick="removeCard(${index})">Eliminar</button>
-        `;
-        library.appendChild(card);
-      });
-    }
-
-    function removeCard(index) {
-      covers.splice(index, 1);
-      localStorage.setItem('covers', JSON.stringify(covers));
-      renderCovers();
-    }
-
-    renderCovers();
-
-    const ctx = document.getElementById('readingChart').getContext('2d');
-    const readingChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-        datasets: [{
-          label: 'Leídos esta semana',
-          data: [2, 1, 3, 1, 2, 0, 1],
-          backgroundColor: '#ffb6c1'
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    });
-
-    function showSection(section) {
-      alert(`Aquí iría la sección de ${section}`);
-    }
-  </script></body>
+  <nav>
+    <button onclick="location.href='mangas.html'">Mangas</button>
+    <button onclick="location.href='manhuas.html'">Manhuas</button>
+    <button onclick="location.href='series.html'">Series</button>
+    <button onclick="location.href='peliculas.html'">Películas</button>
+  </nav>
+</body>
 </html>
