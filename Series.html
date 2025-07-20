@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Series - Listas Personalizadas</title>
+  <style>
+    body {
+      background: #ffe6f0;
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      color: #333;
+    }
+    header {
+      background: #ffb6c1;
+      padding: 20px;
+      position: relative;
+      text-align: center;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+    header img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      object-fit: cover;
+    }
+    nav button {
+      background: #ffb6c1;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      resize: vertical;
+      margin-bottom: 10px;
+    }
+    .list-section {
+      margin-top: 30px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      align-items: flex-start;
+    }
+    .card img {
+      width: 100px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .card-content {
+      flex: 1;
+    }
+    .card-content h3 {
+      margin: 0 0 5px 0;
+    }
+    .card-content p {
+      font-size: 0.9em;
+      color: #555;
+      max-height: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-actions button {
+      background: #ffb6c1;
+      border: none;
+      border-radius: 15px;
+      padding: 6px 12px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 0.8em;
+    }
+    .card-actions {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="perfil.jpg" alt="Perfil" />
+    <h1>Series - Listas Personalizadas</h1>
+  </header>
+  <nav>
+    <button onclick="location.href='index.html'">Inicio</button>
+    <button onclick="location.href='mangas.html'">Mangas</button>
+    <button onclick="location.href='manhuas.html'">Manhuas</button>
+    <button onclick="location.href='peliculas.html'">Películas</button>
+  </nav>
+
+  <div>
+    <h2>Crear o seleccionar lista</h2>
+    <select id="listasSelect"></select>
+    <button onclick="crearLista()">Crear nueva lista</button>
+    <input type="text" id="nombreNuevaLista" placeholder="Nombre lista nueva" />
+  </div>
+
+  <div style="margin-top:20px;">
+    <h2>Agregar serie a lista <span id="listaActualNombre"></span></h2>
+    <div class="form-group">
+      <input type="text" id="titulo" placeholder="Título" />
+    </div>
+    <div class="form-group">
+      <input type="file" id="portada" accept="image/*" />
+    </div>
+    <div class="form-group">
+      <textarea id="sinopsis" rows="3" placeholder="Sinopsis"></textarea>
+    </div>
+    <button onclick="agregarSerie()">Agregar serie</button>
+  </div>
+
+  <div class="list-section">
+    <h2>Series en lista <span id="listaActualNombre2"></span></h2>
+    <div id="seriesList"></div>
+  </div>
+
+<script>
+  let listas = JSON.parse(localStorage.getItem('listas-series') || '{}');
+  let listaActual = null;
+
+  function guardarListas() {
+    localStorage.setItem('listas-series', JSON.stringify(listas));
+  }
+
+  function actualizarSelect() {
+    const select = document.getElementById('listasSelect');
+    select.innerHTML = '';
+    for (const nombre in listas) {
+      const option = document.createElement('option');
+      option.value = nombre;
+      option.textContent = nombre;
+      select.appendChild(option);
+    }
+    if (listaActual && listas[listaActual]) {
+      select.value = listaActual;
+    } else {
+      listaActual = Object.keys(listas)[0] || null;
+      if (!listaActual) {
+        document.getElementById('listaActualNombre').textContent = '(ninguna)';
+        document.getElementById('listaActualNombre2').textContent = '(ninguna)';
+        document.getElementById('seriesList').innerHTML = '<p>Crea una lista para comenzar.</p>';
+        return;
+      }
+      select.value = listaActual;
+    }
+    document.getElementById('listaActualNombre').textContent = listaActual;
+    document.getElementById('listaActualNombre2').textContent = listaActual;
+    mostrarSeries();
+  }
+
+  document.getElementById('listasSelect').addEventListener('change', (e) => {
+    listaActual = e.target.value;
+    document.getElementById('listaActualNombre').textContent = listaActual;
+    document.getElementById('listaActualNombre2').textContent = listaActual;
+    mostrarSeries();
+  });
+
+  function crearLista() {
+    const nuevoNombre = document.getElementById('nombreNuevaLista').value.trim();
+    if (!nuevoNombre) {
+      alert('Escribe un nombre para la nueva lista.');
+      return;
+    }
+    if (listas[nuevoNombre]) {
+      alert('Ya existe una lista con ese nombre.');
+      return;
+    }
+    listas[nuevoNombre] = [];
+    listaActual = nuevoNombre;
+    guardarListas();
+    actualizarSelect();
+    document.getElementById('nombreNuevaLista').value = '';
+  }
+
+  function agregarSerie() {
+    if (!listaActual) {
+      alert('Primero crea o selecciona una lista.');
+      return;
+    }
+    const titulo = document.getElementById('titulo').value.trim();
+    const portadaFile = document.getElementById('portada').files[0];
+    const sinopsis = document.getElementById('sinopsis').value.trim();
+    if (!titulo) {
+      alert('Por favor, escribe un título.');
+      return;
+    }
+    if (!portadaFile) {
+      alert('Por favor, sube una portada.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const nuevaSerie = {
+        titulo,
+        portada: e.target.result,
+        sinopsis,
+        capitulos: []
+      };
+      listas[listaActual].push(nuevaSerie);
+      guardarListas();
+      mostrarSeries();
+      limpiarFormulario();
+    };
+    reader.readAsDataURL(portadaFile);
+  }
+
+  function limpiarFormulario() {
+    document.getElementById('titulo').value = '';
+    document.getElementById('portada').value = '';
+    document.getElementById('sinopsis').value = '';
+  }
+
+  function mostrarSeries() {
+    const cont = document.getElementById('seriesList');
+    cont.innerHTML = '';
+    if (!listaActual || !listas[listaActual]) {
+      cont.innerHTML = '<p>No hay series en esta lista.</p>';
+      return;
+    }
+    listas[listaActual].forEach((serie, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${serie.portada}" alt="Portada ${serie.titulo}" />
+        <div class="card-content">
+          <h3><a href="serie-detalle.html?lista=${encodeURIComponent(listaActual)}&indice=${i}">${serie.titulo}</a></h3>
+          <p contenteditable="true" oninput="editarTitulo(${i}, this.innerText)">${serie.titulo}</p>
+          <p contenteditable="true" oninput="editarSinopsis(${i}, this.innerText)">${serie.sinopsis}</p>
+          <div class="card-actions">
+            <button onclick="eliminarSerie(${i})">Eliminar</button>
+          </div>
+        </div>
+      `;
+      cont.appendChild(card);
+    });
+  }
+
+  function editarTitulo(indice, nuevoTitulo) {
+    if (!listaActual) return;
+    listas[listaActual][indice].titulo = nuevoTitulo;
+    guardarListas();
+  }
+
+  function editarSinopsis(indice, nuevaSinopsis) {
+    if (!listaActual) return;
+    listas[listaActual][indice].sinopsis = nuevaSinopsis;
+    guardarListas();
+  }
+
+  function eliminarSerie(indice) {
+    if (!listaActual) return;
+    listas[listaActual].splice(indice, 1);
+    guardarListas();
+    mostrarSeries();
+  }
+
+  // Inicializar
+  actualizarSelect();
+</script>
+</body>
+      </html>
+      <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detalle de Serie</title>
+  <style>
+    body {
+      background: #ffe6f0;
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      color: #333;
+    }
+    header {
+      background: #ffb6c1;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    header img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      object-fit: cover;
+    }
+    h1 {
+      margin: 0;
+      padding-left: 100px;
+      font-size: 2rem;
+    }
+    img.portada {
+      max-width: 200px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      resize: vertical;
+      margin-bottom: 10px;
+    }
+    .capitulo {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .capitulo a {
+      color: #ff6f91;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .capitulo button {
+      background: #ffb6c1;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    button.agregar-cap {
+      margin-top: 10px;
+      background: #ff6f91;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    a.volver {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #ff6f91;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <a href="series.html" class="volver">&larr; Volver a listas</a>
+  <header>
+    <img src="perfil.jpg" alt="Perfil" />
+    <h1 id="titulo"></h1>
+  </header>
+
+  <div>
+    <label>Portada (subir nueva para cambiar)</label>
+    <input type="file" id="portada" accept="image/*" />
+    <img id="imgPortada" class="portada" src="" alt="Portada" />
+
+    <label>Título</label>
+    <input type="text" id="inputTitulo" />
+
+    <label>Sinopsis</label>
+    <textarea id="inputSinopsis" rows="4"></textarea>
+
+    <h2>Capítulos</h2>
+    <div id="capitulosList"></div>
+
+    <h3>Agregar capítulo nuevo</h3>
+    <input type="text" id="nombreCapitulo" placeholder="Nombre capítulo (ej: Cap 1)" />
+    <input type="url" id="urlCapitulo" placeholder="URL del capítulo" />
+    <button class="agregar-cap" onclick="agregarCapitulo()">Agregar capítulo</button>
+  </div>
+
+<script>
+  function getQueryParams() {
+    const params = {};
+    location.search.substring(1).split('&').forEach(pair => {
+      const [key, value] = pair.split('=');
+      params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+    });
+    return params;
+  }
+
+  const params = getQueryParams();
+  const listaNombre = params.lista;
+  const indice = parseInt(params.indice);
+
+  if (!listaNombre || isNaN(indice)) {
+    alert('Parámetros inválidos. Volviendo a listas.');
+    window.location.href = 'series.html';
+  }
+
+  let listas = JSON.parse(localStorage.getItem('listas-series') || '{}');
+  if (!listas[listaNombre] || !listas[listaNombre][indice]) {
+    alert('Serie no encontrada. Volviendo a listas.');
+    window.location.href = 'series.html';
+  }
+
+  let serie = listas[listaNombre][indice];
+
+  const tituloH1 = document.getElementById('titulo');
+  const inputTitulo = document.getElementById('inputTitulo');
+  const inputSinopsis = document.getElementById('inputSinopsis');
+  const imgPortada = document.getElementById('imgPortada');
+  const portadaInput = document.getElementById('portada');
+  const capitulosList = document.getElementById('capitulosList');
+
+  function cargarDatos() {
+    tituloH1.textContent = serie.titulo || '';
+    inputTitulo.value = serie.titulo || '';
+    inputSinopsis.value = serie.sinopsis || '';
+    imgPortada.src = serie.portada || '';
+    if (!serie.capitulos) serie.capitulos = [];
+    mostrarCapitulos();
+  }
+
+  function guardarCambios() {
+    listas[listaNombre][indice] = serie;
+    localStorage.setItem('listas-series', JSON.stringify(listas));
+  }
+
+  inputTitulo.addEventListener('input', () => {
+    serie.titulo = inputTitulo.value;
+    tituloH1.textContent = inputTitulo.value;
+    guardarCambios();
+  });
+  inputSinopsis.addEventListener('input', () => {
+    serie.sinopsis = inputSinopsis.value;
+    guardarCambios();
+  });
+
+  portadaInput.addEventListener('change', () => {
+    const file = portadaInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      serie.portada = e.target.result;
+      imgPortada.src = serie.portada;
+      guardarCambios();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function mostrarCapitulos() {
+    capitulosList.innerHTML = '';
+    serie.capitulos.forEach((cap, i) => {
+      const div = document.createElement('div');
+      div.className = 'capitulo';
+      div.innerHTML = `
+        <a href="${cap.url}" target="_blank" rel="noopener noreferrer">${cap.nombre}</a>
+        <button onclick="eliminarCapitulo(${i})">Eliminar</button>
+      `;
+      capitulosList.appendChild(div);
+    });
+  }
+
+  function agregarCapitulo() {
+    const nombre = document.getElementById('nombreCapitulo').value.trim();
+    const url = document.getElementById('urlCapitulo').value.trim();
+    if (!nombre || !url) {
+      alert('Completa nombre y URL del capítulo.');
+      return;
+    }
+    serie.capitulos.push({ nombre, url });
+    guardarCambios();
+    mostrarCapitulos();
+    document.getElementById('nombreCapitulo').value = '';
+    document.getElementById('urlCapitulo').value = '';
+  }
+
+  function eliminarCapitulo(i) {
+    serie.capitulos.splice(i, 1);
+    guardarCambios();
+    mostrarCapitulos();
+  }
+
+  cargarDatos();
+</script>
+</body>
+</html>
